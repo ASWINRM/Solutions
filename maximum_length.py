@@ -1,9 +1,12 @@
+import bisect
+
+
 def maximum_length(N, S, Q, X, Y):
     ans = []
     s = set()
     dif = set()
     mx = 0
-    
+
     for i in range(len(S)):
         l = i
         r = i
@@ -13,7 +16,7 @@ def maximum_length(N, S, Q, X, Y):
         s.add((l, r))
         dif.add((r - l + 1, l))
         mx = max(mx, r - l + 1)
-    
+
     for i in range(Q):
         idx = X[i] - 1
         ch = Y[i]
@@ -22,18 +25,15 @@ def maximum_length(N, S, Q, X, Y):
             ans.append(max(dif)[0])
             continue
         assert s
-        it = s.lower_bound((idx, -1))
-        if it == s.end():
-            assert it != s.begin()
+        it = bisect.bisect_left([x[0] for x in s], idx)
+        if it == len(s):
             it -= 1
-        elif it[0] > idx:
-            assert it != s.begin()
-            it -= 1
-        l1 = it[0]
-        r1 = it[1]
+        elif s[it][0] > idx:
+            if it > 0:
+                it -= 1
+        l1, r1 = s.pop(it)
         assert (r1 - l1 + 1, l1) in dif
         dif.remove((r1 - l1 + 1, l1))
-        s.remove(it)
 
         if l1 < idx:
             s.add((l1, idx - 1))
@@ -46,30 +46,32 @@ def maximum_length(N, S, Q, X, Y):
         l = idx
         r = idx
         if idx + 1 < len(S) and S[idx] == S[idx + 1]:
-            it = s.lower_bound((idx + 1, -1))
-            assert it != s.end()
-            r = it[1]
-            assert (it[1] - it[0] + 1, it[0]) in dif
-            dif.remove((it[1] - it[0] + 1, it[0]))
-            s.remove(it)
+            it = bisect.bisect_left([x[0] for x in s], idx + 1)
+            r = s.pop(it)[1]
+            assert (r - l + 1, l) in dif
+            dif.remove((r - l + 1, l))
         if idx - 1 >= 0 and S[idx] == S[idx - 1]:
-            it = s.lower_bound((idx, -1))
-            assert it != s.begin()
-            it -= 1
-            assert (it[1] - it[0] + 1, it[0]) in dif
-            dif.remove((it[1] - it[0] + 1, it[0]))
-            s.remove(it)
+            it = bisect.bisect_left([x[0] for x in s], idx)
+            if it == len(s):
+                it -= 1
+            elif s[it][0] > idx:
+                if it > 0:
+                    it -= 1
+            l = s.pop(it)[0]
+            assert (r - l + 1, l) in dif
+            dif.remove((r - l + 1, l))
         s.add((l, r))
         dif.add((r - l + 1, l))
         ans.append(max(dif)[0])
     return ans
+
 
 if __name__ == "__main__":
     t = int(input())
     sumn = 0
     sumq = 0
     assert 1 <= t <= 1e4
-    
+
     for _ in range(t):
         N = int(input())
         assert 1 <= N <= 1e5
@@ -85,6 +87,7 @@ if __name__ == "__main__":
         assert all('a' <= yi <= 'z' for yi in Y)
         ans = maximum_length(N, S, Q, X, Y)
         print(*ans)
-    
+
     assert 1 <= sumn <= 1e5
     assert 1 <= sumq <= 1e5
+
